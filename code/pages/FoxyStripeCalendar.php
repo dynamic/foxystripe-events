@@ -89,14 +89,16 @@ class FoxyStripeCalendar extends ProductHolder
         return $end_date;
     }
 
-    public function getUpcomingEvents($filter = array(), $limit = 10)
+    public static function getUpcomingEvents($filter = array(), $limit = 10)
     {
         $filter['Date:GreaterThanOrEqual'] = date('Y-m-d', strtotime('now'));
 
         // filter by Category
-        $self = $this;
-        if ($self->data()->Categories()->exists()) {
-            $filter['Categories.ID'] = $self->data()->Categories()->map('ID', 'ID')->toArray();
+        if (isset($filter['ParentID']) && $filter['ParentID'] != '') {
+            $calendar = self::get()->byID($filter['ParentID']);
+            if ($calendar->Categories()->exists()) {
+                $filter['Categories.ID'] = $calendar->Categories()->map('ID', 'ID')->toArray();
+            }
         }
 
         $events = ($limit == 0) ?
@@ -116,12 +118,13 @@ class FoxyStripeCalendar extends ProductHolder
     public function getEvents($filter = null, $limit = 10)
     {
         $eventList = ArrayList::create();
+
+        if ($this->data()->Categories()->exists()) {
+            $filter['ParentID'] = $this->ID;
+        }
+
         $events = self::getUpcomingEvents($filter, $limit);
         $eventList->merge($events);
-        if ($this->ICSFeed) {
-            $icsEvents = $this->getFeedEvents();
-            $eventList->merge($icsEvents);
-        }
 
         return $eventList;
     }
