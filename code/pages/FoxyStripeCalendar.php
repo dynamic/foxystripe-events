@@ -35,7 +35,7 @@ class FoxyStripeCalendar extends ProductHolder
             DropdownField::create(
                 'RangeToShow',
                 'Range to show',
-                singleton('EventHolder')->dbObject('RangeToShow')->enumValues()
+                singleton('FoxyStripeCalendar')->dbObject('RangeToShow')->enumValues()
             ),
             'Content'
         );
@@ -149,24 +149,24 @@ class FoxyStripeCalendar extends ProductHolder
 
     public function canEdit($member = null)
     {
-        return Permission::check('EventHolder_CRUD');
+        return Permission::check('FoxyStripeCalendar_CRUD');
     }
 
     public function canDelete($member = null)
     {
-        return Permission::check('EventHolder_CRUD');
+        return Permission::check('FoxyStripeCalendar_CRUD');
     }
 
     public function canCreate($member = null)
     {
-        return Permission::check('EventHolder_CRUD');
+        return Permission::check('FoxyStripeCalendar_CRUD');
     }
 
     public function providePermissions()
     {
         return array(
             //'Location_VIEW' => 'Read a Location',
-            'EventHolder_CRUD' => 'Create, Update and Delete an Event Holder Page',
+            'FoxyStripeCalendar_CRUD' => 'Create, Update and Delete a FoxyStripe Calendar Page',
         );
     }
 }
