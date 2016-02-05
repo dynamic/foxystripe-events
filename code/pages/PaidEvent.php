@@ -23,6 +23,14 @@ class PaidEvent extends ProductPage implements PermissionProvider
         ),
     );
 
+    private static $summary_fields = array(
+        'Title' => 'Title',
+        'Date.NiceUS' => 'Date',
+        'Time.Nice' => 'Time',
+        'LocationName' => 'Location',
+        'Price.Nice' => 'Price',
+    );
+
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
