@@ -92,23 +92,30 @@ class FoxyStripeCalendar extends ProductHolder
     public static function getUpcomingEvents($filter = array(), $limit = 10)
     {
         $filter['Date:GreaterThanOrEqual'] = date('Y-m-d', strtotime('now'));
+        $filterAny = array();
 
-        // filter by Category
+        //if a category filter selected
         if (isset($filter['ParentID']) && $filter['ParentID'] != '') {
             $calendar = self::get()->byID($filter['ParentID']);
-            if ($calendar->Categories()->exists()) {
-                $filter['Categories.ID'] = $calendar->Categories()->map('ID', 'ID')->toArray();
+            if ($calendar && $calendar->Categories()->exists()) {
+                $categories = $calendar->Categories();
+                foreach ($categories as $category) {
+                    $filterAny['Categories.ID'] = $category->ID;
+                }
             }
+            unset($filter['ParentID']);
         }
 
         $events = ($limit == 0) ?
             PaidEvent::get()
                 ->filter($filter)
+                ->filterAny($filterAny)
                 ->sort('Date', 'ASC')
 
             :
             PaidEvent::get()
                 ->filter($filter)
+                ->filter($filterAny)
                 ->limit($limit)
                 ->sort('Date', 'ASC');
 
