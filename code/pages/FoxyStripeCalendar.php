@@ -12,16 +12,24 @@ class FoxyStripeCalendar extends ProductHolder
     private static $timezone = 'America/Chicago';
 
     private static $db = array(
-        'ICSFeed' => 'Varchar(255)',
         'EventsPerPage' => 'Int',
         'RangeToShow' => 'Enum("Month,Year,All Upcoming","Month")',
+    );
+
+    private static $many_many = array(
+        'Categories' => 'FoxyStripeEventCategory',
+    );
+
+    private static $many_many_extraFields = array(
+        'Categories' => array(
+            'SortOrder' => 'Int',
+        ),
     );
 
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
 
-        $fields->addFieldToTab('Root.Main', TextField::create('ICSFeed')->setTitle('ICS Feed URL'), 'Content');
         $fields->addFieldToTab(
             'Root.Main',
             DropdownField::create(
@@ -39,65 +47,22 @@ class FoxyStripeCalendar extends ProductHolder
             'Content'
         );
 
+        $config = GridFieldConfig_RelationEditor::create();
+        if (class_exists('GridFieldSortableRows')) {
+            $config->addComponent(new GridFieldSortableRows('SortOrder'));
+        }
+        if (class_exists('GridFieldAddExistingSearchButton')) {
+            $config->removeComponentsByType('GridFieldAddExistingAutocompleter');
+            $config->addComponent(new GridFieldAddExistingSearchButton());
+        }
+        $categories = $this->owner->Categories()->sort('SortOrder');
+        $categoryField = GridField::create('Categories', 'Categories', $categories, $config);
+
+        $fields->addFieldsToTab('Root.Filter', array(
+            $categoryField,
+        ));
+
         return $fields;
-    }
-
-    public function getFeedEvents($start_date = null, $end_date = null)
-    {
-        $start = sfDate::getInstance(strtotime('now'));
-        $end_date = $this->buildEndDate($start);
-
-        // single day views don't pass end dates
-        if ($end_date) {
-            $end = sfDate::getInstance($end_date);
-        } else {
-            $end = false;
-        }
-
-        $feedevents = new ArrayList();
-        $feedreader = new ICSReader($this->ICSFeed);
-        $events = $feedreader->getEvents();
-        foreach ($events as $event) {
-            // translate iCal schema into CalendarAnnouncement schema (datetime + title/content)
-            $feedevent = new EventPage();
-            $feedevent->Title = $event['SUMMARY'];
-            if (isset($event['DESCRIPTION'])) {
-                $feedevent->Content = $event['DESCRIPTION'];
-            }
-
-            $startdatetime = $this->iCalDateToDateTime($event['DTSTART']);
-            $enddatetime = $this->iCalDateToDateTime($event['DTEND']);
-
-            if (($end !== false) && (($startdatetime->get() < $start->get() && $enddatetime->get() < $start->get())
-                    || $startdatetime->get() > $end->get() && $enddatetime->get() > $end->get())
-            ) {
-                // do nothing; dates outside range
-            } else {
-                if ($startdatetime->get() > $start->get()) {
-                    $feedevent->Date = $startdatetime->format('Y-m-d');
-                    $feedevent->Time = $startdatetime->format('H:i:s');
-
-                    $feedevent->EndDate = $enddatetime->format('Y-m-d');
-                    $feedevent->EndTime = $enddatetime->format('H:i:s');
-
-                    $feedevents->push($feedevent);
-                }
-            }
-        }
-
-        return $feedevents;
-    }
-
-    public function iCalDateToDateTime($date)
-    {
-        date_default_timezone_set($this->stat('timezone'));
-        $date = str_replace('T', '', $date);//remove T
-        $date = str_replace('Z', '', $date);//remove Z
-        $date = strtotime($date);
-        $date = (!date('I')) ? $date : strtotime('- 1 hour', $date);
-        $date = $date + date('Z');
-
-        return sfDate::getInstance($date);
     }
 
     public function buildEndDate($start = null)
@@ -124,9 +89,16 @@ class FoxyStripeCalendar extends ProductHolder
         return $end_date;
     }
 
-    public static function getUpcomingEvents($filter = array(), $limit = 10)
+    public function getUpcomingEvents($filter = array(), $limit = 10)
     {
         $filter['Date:GreaterThanOrEqual'] = date('Y-m-d', strtotime('now'));
+
+        // filter by Category
+        $self = $this;
+        if ($self->data()->Categories()->exists()) {
+            $filter['Categories.ID'] = $self->data()->Categories()->map('ID', 'ID')->toArray();
+        }
+
         $events = ($limit == 0) ?
             PaidEvent::get()
                 ->filter($filter)
@@ -156,7 +128,7 @@ class FoxyStripeCalendar extends ProductHolder
 
     public function getItemsShort()
     {
-        return EventPage::get()
+        return PaidEvent::get()
             ->limit(3)
             ->filter(array(
                 'Date:LessThan:Not' => date('Y-m-d', strtotime('now')),
