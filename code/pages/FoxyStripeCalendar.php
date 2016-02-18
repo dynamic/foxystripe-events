@@ -1,6 +1,6 @@
 <?php
 
-class FoxyStripeCalendar extends ProductHolder
+class FoxyStripeCalendar extends ProductHolder implements PermissionProvider
 {
     private static $singular_name = 'Event Calendar';
     private static $plural_name = 'Event Calendars';
@@ -175,7 +175,6 @@ class FoxyStripeCalendar extends ProductHolder
     public function providePermissions()
     {
         return array(
-            //'Location_VIEW' => 'Read a Location',
             'FoxyStripeCalendar_CRUD' => 'Create, Update and Delete a FoxyStripe Calendar Page',
         );
     }
