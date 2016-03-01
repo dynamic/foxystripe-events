@@ -48,11 +48,9 @@ class PaidEvent extends ProductPage implements PermissionProvider
         // Registrations
         $orders = new ArrayList();
         $addToOrders = function ($details) use (&$orders) {
-            if (!$orders->find('ID', $details->OrderID)) {
                 $orders->push($details->OrderID);
-            }
         };
-        $this->owner->OrderDetails()->each($addToOrders);
+        $this->OrderDetails()->each($addToOrders);
         $registrations = Order::get()->filter(array('ID' => $orders->toArray()));
 
         $gridConfig = GridFieldConfig_RecordViewer::create();
