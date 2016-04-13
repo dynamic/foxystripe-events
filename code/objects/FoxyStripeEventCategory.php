@@ -1,6 +1,6 @@
 <?php
 
-class FoxyStripeEventCategory extends DataObject
+class FoxyStripeEventCategory extends DataObject implements PermissionProvider
 {
     private static $db = array(
         'Title' => 'Varchar(255)',
@@ -18,21 +18,28 @@ class FoxyStripeEventCategory extends DataObject
      */
     public function canEdit($member = null)
     {
-        return Permission::check('Event_CRUD');
+        return Permission::check('EventCategory_CRUD');
     }
 
     public function canDelete($member = null)
     {
-        return Permission::check('Event_CRUD');
+        return Permission::check('EventCategory_CRUD');
     }
 
     public function canCreate($member = null)
     {
-        return Permission::check('Event_CRUD');
+        return Permission::check('EventCategory_CRUD');
     }
 
     public function canPublish($member = null)
     {
-        return Permission::check('Event_CRUD');
+        return Permission::check('EventCategory_CRUD');
+    }
+
+    public function providePermissions()
+    {
+        return array(
+            'EventCategory_CRUD' => 'Allow user to manage Event Categories',
+        );
     }
 }
