@@ -11,6 +11,7 @@ class PaidEvent extends ProductPage implements PermissionProvider
         'EndDate' => 'Date',
         'Time' => 'Time',
         'EndTime' => 'Time',
+        'HideQuantity' => 'Boolean',
     );
 
     private static $many_many = array(
@@ -74,6 +75,12 @@ class PaidEvent extends ProductPage implements PermissionProvider
         $fields->removeByName(array(
             'Weight',
         ));
+
+        $fields->addFieldToTab(
+            'Root.Details',
+            CheckboxField::create('HideQuantity')
+                ->setDescription('when checked, will hide the quantity field from the add to cart form')
+        );
 
         $this->extend('updateCMSFields', $fields);
 
@@ -153,6 +160,11 @@ class PaidEvent_Controller extends ProductPage_Controller
         $fields->removeByName(array(
             ProductPage::getGeneratedValue($code, 'weight', $data->Weight),
         ));
+
+        if ($data->HideQuantity) {
+            $quantity = ProductPage::getGeneratedValue($code, 'quantity', 1);
+            $fields->replaceField('quantity', HiddenField::create($quantity)->setValue(1));
+        }
 
         return $form;
     }
